@@ -189,6 +189,7 @@ function renderProducts() {
   productGrid.innerHTML = items.map(product => {
     const isPackage = product.category === "paket";
     const discount = calculateDiscount(product.originalPrice, product.price);
+    const hasDiscount = discount > 0;
 
     if (isPackage) {
       // Bundling Package Card Layout
@@ -200,9 +201,9 @@ function renderProducts() {
               <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
               </svg>
-              Paket Bundling Masak
+              Paket Masak Jateng
             </span>
-            ${discount > 0 ? `
+            ${hasDiscount ? `
               <span class="bg-rose-600 text-white text-[11px] font-bold px-2 py-0.5 rounded-full shadow-sm">
                 Hemat ${discount}%
               </span>
@@ -218,8 +219,13 @@ function renderProducts() {
               class="w-full h-full object-cover group-hover:scale-105 transition duration-500"
             />
             <div class="absolute bottom-2 left-2 bg-black/60 backdrop-blur-sm text-white text-[11px] px-2 py-0.5 rounded-md">
-              ${product.harvestStatus || "Kemas Segar"}
+              ${product.harvestStatus || "On-Demand"}
             </div>
+            ${product.farmHub ? `
+              <div class="absolute top-3 right-3 bg-white/90 backdrop-blur-sm text-emerald-900 text-[10px] font-bold px-2 py-0.5 rounded-full shadow">
+                Hub: ${product.farmHub}
+              </div>
+            ` : ""}
           </div>
 
           <!-- Card Content -->
@@ -231,7 +237,7 @@ function renderProducts() {
                   ★ ${product.rating.toFixed(1)}
                   <span class="text-slate-400 font-normal">(${product.soldCount}+ terjual)</span>
                 </span>
-                <span class="text-slate-500 truncate max-w-[120px] text-right font-medium">
+                <span class="text-slate-500 truncate max-w-[130px] text-right font-medium">
                   📍 ${product.origin}
                 </span>
               </div>
@@ -286,7 +292,7 @@ function renderProducts() {
             <!-- Price & Add Button -->
             <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-2 mt-auto">
               <div>
-                ${product.originalPrice > product.price ? `
+                ${hasDiscount ? `
                   <div class="text-xs text-slate-400 line-through">
                     ${formatRupiah(product.originalPrice)}
                   </div>
@@ -322,7 +328,7 @@ function renderProducts() {
               ${product.badge}
             </span>
           ` : ""}
-          ${discount > 0 ? `
+          ${hasDiscount ? `
             <span class="bg-rose-600 text-white text-[11px] font-bold px-2 py-0.5 rounded-full shadow-sm">
               -${discount}%
             </span>
@@ -340,6 +346,11 @@ function renderProducts() {
           <div class="absolute bottom-2 left-2 bg-black/60 backdrop-blur-sm text-white text-[11px] px-2 py-0.5 rounded-md">
             ${product.harvestStatus || "Segar"}
           </div>
+          ${product.farmHub ? `
+            <div class="absolute top-3 right-3 bg-white/90 backdrop-blur-sm text-emerald-900 text-[10px] font-bold px-2 py-0.5 rounded-full shadow">
+              Hub: ${product.farmHub}
+            </div>
+          ` : ""}
         </div>
 
         <!-- Card Body -->
@@ -351,7 +362,7 @@ function renderProducts() {
                 ★ ${product.rating.toFixed(1)}
                 <span class="text-slate-400 font-normal">(${product.soldCount})</span>
               </span>
-              <span class="text-slate-500 truncate max-w-[120px] text-right font-medium">
+              <span class="text-slate-500 truncate max-w-[130px] text-right font-medium">
                 📍 ${product.origin}
               </span>
             </div>
@@ -370,7 +381,7 @@ function renderProducts() {
           <!-- Price & Button -->
           <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-2 mt-auto">
             <div>
-              ${product.originalPrice > product.price ? `
+              ${hasDiscount ? `
                 <div class="text-xs text-slate-400 line-through">
                   ${formatRupiah(product.originalPrice)}
                 </div>
@@ -739,11 +750,13 @@ function handleWhatsAppCheckout() {
   // Get customer form values
   const nameInput = document.getElementById("customer-name");
   const addressInput = document.getElementById("customer-address");
+  const zoneInput = document.getElementById("delivery-zone");
   const timeSlotInput = document.getElementById("delivery-slot");
   const notesInput = document.getElementById("customer-notes");
 
   const customerName = nameInput ? nameInput.value.trim() : "";
   const customerAddress = addressInput ? addressInput.value.trim() : "";
+  const deliveryZone = zoneInput ? zoneInput.value : "Radius Dekat Kebun Mitra (Klaim Bebas Ongkir)";
   const deliverySlot = timeSlotInput ? timeSlotInput.value : "Pagi (06.00 - 09.00 WIB)";
   const notes = notesInput ? notesInput.value.trim() : "";
 
@@ -767,6 +780,8 @@ function handleWhatsAppCheckout() {
     day: "numeric"
   }).format(new Date());
 
+  const isFreeRadius = deliveryZone.includes("Bebas Ongkir");
+
   // Build Structured WhatsApp Message
   let message = `*PESANAN BARU - ${CONFIG.storeName.toUpperCase()}*\n`;
   message += `📅 Tanggal: ${dateStr}\n\n`;
@@ -774,18 +789,20 @@ function handleWhatsAppCheckout() {
   message += `*Data Pengiriman:*\n`;
   message += `• Nama: ${customerName}\n`;
   message += `• Alamat: ${customerAddress}\n`;
-  message += `• Jadwal Kirim: ${deliverySlot}\n`;
+  message += `• Zona Pengiriman: ${deliveryZone}\n`;
+  message += `• Waktu Kirim: ${deliverySlot}\n`;
   if (notes) {
     message += `• Catatan: ${notes}\n`;
   }
-  message += `\n*Daftar Belanja:*\n`;
+  message += `\n*Daftar Belanja (Forward ke Kebun Tujuan):*\n`;
 
   state.cart.forEach((item, index) => {
     const product = PRODUCT_MAP.get(item.id);
     if (product) {
       const lineTotal = product.price * item.quantity;
       const isPkg = product.category === "paket";
-      message += `${index + 1}. *${product.name}* (${item.quantity}x)\n`;
+      const hubText = product.farmHub ? ` [Hub: ${product.farmHub}]` : "";
+      message += `${index + 1}. *${product.name}* (${item.quantity}x)${hubText}\n`;
       message += `   Harga: ${formatRupiah(product.price)} / ${product.unit} = ${formatRupiah(lineTotal)}\n`;
       if (isPkg && product.includedItemIds) {
         const itemNames = product.includedItemIds.map(id => {
@@ -798,11 +815,13 @@ function handleWhatsAppCheckout() {
   });
 
   message += `--------------------------------------\n`;
-  message += `*TOTAL PEMBAYARAN: ${formatRupiah(subtotal)}*\n`;
-  if (subtotal >= CONFIG.freeShippingMin) {
-    message += `🎁 _Promo: Gratis Ongkir Berhasil Digunakan!_\n`;
+  message += `*TOTAL TAGIHAN: ${formatRupiah(subtotal)}*\n`;
+  if (isFreeRadius) {
+    message += `🛵 _Ongkos Kirim: Bebas Ongkir (Radius Kebun Mitra)_\n`;
+  } else {
+    message += `🛵 _Ongkos Kirim: Tarif Kurir Regular (Konfirmasi Admin)_\n`;
   }
-  message += `\nMohon konfirmasi ketersediaan stok & nomor rekeningnya. Terima kasih!`;
+  message += `\nMohon konfirmasi ketersediaan dan penerusan pesanan ke kebun tujuan. Terima kasih!`;
 
   const waUrl = `https://wa.me/${CONFIG.whatsappNumber}?text=${encodeURIComponent(message)}`;
   window.open(waUrl, "_blank");

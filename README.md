@@ -1,62 +1,59 @@
-# Taman Sayur: Katalog produk pertanian B2C dan order otomatis WhatsApp
+# Taman Sayur: Katalog komoditas sayuran Jawa Tengah dan order otomatis WhatsApp
 
-Studi kasus pembuatan katalog web untuk startup pertanian B2C (*farm-to-table*). Proyek ini menggabungkan struktur data Sistem Informasi, materi visual promosi, dan alur konversi penjualan langsung ke WhatsApp tanpa backend server.
+Studi kasus pembuatan katalog web untuk startup pertanian B2C berbasis sistem penerusan pesanan langsung (*on-demand farm forwarding*). Proyek ini menghubungkan konsumen keluarga perkotaan langsung ke kebun-kebun mitra di Jawa Tengah tanpa perantara panjang dan tanpa penyimpanan stok gudang.
 
 ---
 
-## 1. Latar belakang dan masalah bisnis
+## 1. Latar belakang dan model bisnis
 
-Startup penyedia hasil panen segar sering menghadapi hambatan konversi saat calon konsumen berbelanja lewat web atau media sosial:
+Usaha rintisan hasil panen sering menghadapi risiko pembusukan stok (*food waste*) jika menyewa gudang penyimpanan sayur dalam jumlah besar. Untuk mengatasi kendala ini, Taman Sayur menerapkan sistem penerusan pesanan langsung (*zero-inventory on-demand forwarding*):
 
-* Konsumen enggan memasang aplikasi baru di ponsel hanya untuk belanja sayur mingguan.
-* Formulir registrasi dan verifikasi akun yang panjang memicu *cart abandonment*.
-* Pembeli sayur online butuh kepastian waktu panen, asal petani, dan takaran porsi.
-* Ibu rumah tangga dan pekerja perkotaan lebih menyukai bahan masakan yang sudah dikelompokkan per menu daripada harus meracik bumbu satu per satu.
-
-### Solusi yang dibangun
-Katalog web statis yang ringan, cepat dimuat di ponsel, memiliki 100 pilihan produk (80 produk satuan dan 20 paket masak), serta tombol checkout yang langsung merangkai daftar pesanan ke pesan WhatsApp terformat rapi.
+* Platform tidak menimbun sayur di gudang pendingin.
+* Setiap pesanan yang masuk melalui WhatsApp langsung diteruskan (*forwarded*) ke klaster kebun mitra tujuan di Jawa Tengah (seperti Dataran Tinggi Dieng, Kopeng, Bandungan, Brebes, atau Wonogiri).
+* Petani memetik sayuran sesuai jumlah pesanan riil pada hari pengiriman, lalu mengemas dan mengirimkannya langsung ke pemesan.
+* Penetapan harga dibuat wajar langsung dari petani tanpa diskon artifisial; potongan harga hemat hanya diberikan pada paket bundling masakan.
+* Promo bebas ongkos kirim dikhususkan bagi konsumen yang tinggal di area radius terdekat lokasi kebun mitra.
 
 ---
 
 ## 2. Struktur data dan hubungan relasional
 
-Data katalog disimpan pada `js/products.js` menggunakan struktur objek JavaScript murni tanpa ketergantungan database eksternal:
+Data katalog disimpan pada `js/products.js` menggunakan objek JavaScript murni dengan 40 item terkurasi:
 
-* **80 Produk satuan (`prod-01` s/d `prod-80`)**:
-  * 25 Sayuran daun, batang, dan jamur (bayam, selada romaine, jamur tiram, kale).
-  * 20 Sayuran buah, polong, dan umbi (wortel Berastagi, tomat cherry, kentang Dieng).
-  * 20 Buah-buahan segar (alpukat mentega, pisang Cavendish, jeruk Medan).
-  * 15 Bumbu dapur dan rempah (bawang merah Brebes, bawang putih kating, cabai rawit).
+* **32 Produk satuan (`prod-01` s/d `prod-32`)**:
+  * 10 Sayuran daun, batang, dan jamur (bayam Sukoharjo, kangkung Boyolali, selada Romaine Kopeng, kubis Dieng, brokoli lereng Merbabu, jamur tiram Boyolali).
+  * 10 Sayuran buah, polong, dan umbi (kentang Dieng, wortel Bandungan, tomat Magelang, buncis baby Bandungan, jagung Grobogan, labu siam Wonosobo).
+  * 12 Bumbu dapur dan biofarmaka (bawang merah Bima Brebes, bawang putih Temanggung, cabai rawit Temanggung, cabai keriting Boyolali, jahe merah Wonogiri, kunyit Sukoharjo, kencur Wonogiri).
 
-* **20 Paket bundling masak (`pkt-01` s/d `pkt-20`)**:
+* **8 Paket bundling masak Jawa Tengah (`pkt-01` s/d `pkt-08`)**:
   * Setiap paket masakan merujuk langsung ke ID produk satuan melalui array `includedItemIds`.
-  * Contoh: `pkt-01` (Paket Sayur Sop Komplit) memuat `prod-26` (Wortel), `prod-08` (Kubis), `prod-29` (Buncis), `prod-11` (Daun Bawang), `prod-12` (Seledri), dan `prod-67` (Bawang Putih).
-  * Antarmuka web menyediakan tombol modal untuk melihat rincian setiap bahan penyusun paket dan perbandingan nilai hemat dibanding membeli eceran.
+  * Contoh: `pkt-01` (Paket Sayur Sop Dingin Dieng) memuat `prod-11` (Kentang Dieng), `prod-07` (Kubis Dieng), `prod-12` (Wortel Bandungan), `prod-14` (Buncis), `prod-09` (Daun Bawang), dan `prod-22` (Bawang Putih Temanggung).
+  * Antarmuka web menyediakan tombol rincian bahan dan kalkulasi nilai hemat dibanding membeli eceran.
 
 ---
 
 ## 3. Fitur utama katalog
 
-1. **Pencarian dan filter kategori seketika**:
-   Pengguna dapat menyaring katalog berdasarkan kategori (Paket Masak, Sayuran, Buah, Bumbu) atau mengetik nama produk dan nama daerah petani mitra di kolom pencarian.
+1. **Pencarian dan filter kategori Jawa Tengah**:
+   Menyaring katalog berdasarkan tiga kelompok: Paket Masak Jateng, Sayuran Segar, serta Bumbu dan Rempah Asli.
 
 2. **Keranjang belanja interaktif**:
-   Keranjang belanja sisi kanan (*drawer*) menyimpan item pilihan menggunakan `localStorage`, sehingga daftar belanja tidak hilang saat halaman disegarkan.
+   Menyimpan pilihan belanja menggunakan `localStorage` agar daftar barang tetap tersimpan saat peramban disegarkan.
 
-3. **Pelacak gratis ongkir**:
-   Bilah progres visual yang memberi tahu sisa nominal belanja untuk mendapatkan promo bebas ongkos kirim dengan batas minimal Rp 100.000.
+3. **Pemilihan zona pengiriman**:
+   Formulir belanja menyediakan pilihan zona radius dekat kebun mitra (klaim bebas ongkir) atau area kota reguler (tarif normal).
 
 4. **Format pesan otomatis ke WhatsApp**:
-   Tombol pemesanan membaca data nama, alamat, slot kirim pagi, catatan khusus, dan rincian produk, lalu membuka tautan `https://wa.me/` dengan teks pesanan yang rapi.
+   Merangkai nama pemesan, alamat lengkap, zona pengiriman, waktu antar, serta daftar komoditas beserta hub kebun tujuan pengiriman.
 
-5. **Pemutar video proses panen**:
-   Seksi khusus video interaktif untuk menampilkan rekaman proses panen hidroponik, penyortiran mutu, dan pengemasan higienis.
+5. **Pemutar video cerita kebun**:
+   Seksi khusus video interaktif untuk menampilkan proses panen sayur langsung di bedeng tanah kebun lereng pegunungan Jawa Tengah.
 
 ---
 
 ## 4. Susunan berkas proyek
 
-Seluruh fungsionalitas aplikasi terbagi ke dalam empat berkas utama yang siap dijalankan langsung di peramban:
+Seluruh fungsionalitas aplikasi terbagi ke dalam empat berkas utama:
 
 ```text
 product-catalog/
@@ -64,7 +61,7 @@ product-catalog/
 ├── css/
 │   └── custom.css        # Gaya tampilan kustom, kartu produk, dan animasi drawer
 ├── js/
-│   ├── products.js       # Database 100 item (80 produk satuan + 20 paket bundling)
+│   ├── products.js       # Database 40 komoditas sayur dan bumbu Jawa Tengah
 │   └── app.js            # Logika filter, pencarian, keranjang, dan generator WhatsApp
 └── README.md             # Dokumentasi studi kasus proyek
 ```
@@ -73,7 +70,7 @@ product-catalog/
 
 ## 5. Menjalankan proyek secara lokal
 
-Aplikasi ini tidak memerlukan instalasi Node.js atau proses kompilasi. Anda dapat menjalankannya dengan server lokal sederhana:
+Aplikasi ini tidak memerlukan instalasi Node.js atau proses kompilasi. Jalankan server lokal:
 
 ```bash
 # Menggunakan Python 3
@@ -92,7 +89,7 @@ Langkah untuk mempublikasikan katalog ini secara online tanpa biaya:
    ```bash
    git init
    git add .
-   git commit -m "feat: rilis awal katalog web Taman Sayur"
+   git commit -m "feat: rilis katalog komoditas Jawa Tengah Taman Sayur"
    ```
 2. Hubungkan ke repositori GitHub Anda dan kirim ke cabang `main`.
 3. Buka menu `Settings` lalu pilih menu `Pages` pada repositori GitHub.
