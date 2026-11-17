@@ -347,12 +347,12 @@ function renderProducts() {
             <div>
               <!-- Rating & Terjual -->
               <div class="flex items-center justify-between text-xs text-slate-500 mb-1">
-                <span class="flex items-center gap-1 text-amber-500 font-semibold">
-                  ★ ${product.rating.toFixed(1)}
+                <span class="flex items-center gap-1 text-slate-700 font-semibold">
+                  Rating ${product.rating.toFixed(1)}
                   <span class="text-slate-400 font-normal">(${product.soldCount}+ terjual)</span>
                 </span>
                 <span class="text-slate-500 truncate max-w-[130px] text-right font-medium">
-                  📍 ${product.origin}
+                  ${product.origin}
                 </span>
               </div>
 
@@ -374,7 +374,7 @@ function renderProducts() {
               <div class="bg-emerald-50/70 border border-emerald-200/70 rounded-xl p-2.5 mb-3">
                 <div class="flex items-center justify-between mb-1.5">
                   <span class="text-xs font-bold text-emerald-900 flex items-center gap-1">
-                    📦 Isi Paket (${product.includedItemIds.length} Bahan):
+                    Komposisi Paket (${product.includedItemIds.length} Bahan):
                   </span>
                   <button 
                     type="button"
@@ -481,12 +481,12 @@ function renderProducts() {
           <div>
             <!-- Rating & Asal Petani -->
             <div class="flex items-center justify-between text-xs text-slate-500 mb-1">
-              <span class="flex items-center gap-1 text-amber-500 font-semibold">
-                ★ ${product.rating.toFixed(1)}
+              <span class="flex items-center gap-1 text-slate-700 font-semibold">
+                Rating ${product.rating.toFixed(1)}
                 <span class="text-slate-400 font-normal">(${product.soldCount})</span>
               </span>
               <span class="text-slate-500 truncate max-w-[130px] text-right font-medium">
-                📍 ${product.origin}
+                ${product.origin}
               </span>
             </div>
 
@@ -687,8 +687,8 @@ function openProductModal(productId) {
               Hub: ${prod.farmHub}
             </span>
           ` : ""}
-          <span class="bg-amber-400 text-slate-900 text-[10px] font-extrabold px-2 py-0.5 rounded-full">
-            ★ ${prod.rating.toFixed(1)} (${prod.soldCount}+ terjual)
+          <span class="bg-emerald-100 text-emerald-900 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border border-emerald-200">
+            Rating ${prod.rating.toFixed(1)} (${prod.soldCount}+ terjual)
           </span>
         </div>
         <h2 class="text-xl sm:text-2xl font-black text-white drop-shadow-sm">${prod.name}</h2>
@@ -713,7 +713,7 @@ function openProductModal(productId) {
         </div>
         <div class="text-right">
           <span class="text-xs text-slate-400 font-medium block">Lokasi Panen:</span>
-          <span class="text-xs font-bold text-slate-800">📍 ${prod.origin}</span>
+          <span class="text-xs font-bold text-slate-800">${prod.origin}</span>
           <span class="block text-[10px] text-emerald-700 font-semibold mt-0.5">${prod.harvestStatus || "Dipetik Sesuai Pesanan"}</span>
         </div>
       </div>
@@ -726,17 +726,11 @@ function openProductModal(productId) {
 
       <!-- Freshness & Storage Guarantee -->
       <div class="bg-emerald-50/70 border border-emerald-100 rounded-xl p-3.5 space-y-2 mb-4">
-        <div class="flex items-start gap-2">
-          <span class="text-emerald-700 text-sm">🌱</span>
-          <div class="text-xs text-slate-700 leading-normal">
-            <strong class="text-emerald-900">Zero-Inventory Fresh Harvest:</strong> Dipetik langsung dari kebun mitra petani setelah pesanan Anda masuk, bukan sayur simpanan gudang pendingin.
-          </div>
+        <div class="text-xs text-slate-700 leading-normal">
+          <strong class="text-emerald-900 block mb-0.5">Zero-Inventory Fresh Harvest:</strong> Dipetik langsung dari kebun mitra petani setelah pesanan Anda masuk, bukan sayur simpanan gudang pendingin.
         </div>
-        <div class="flex items-start gap-2 pt-2 border-t border-emerald-100/60">
-          <span class="text-emerald-700 text-sm">🧊</span>
-          <div class="text-xs text-slate-700 leading-normal">
-            <strong class="text-emerald-900">Tips Penyimpanan Dapur:</strong> Simpan pada suhu chiller kulkas (4°C - 8°C) dalam wadah kering atau plastik berventilasi agar tetap renyah hingga 5-7 hari.
-          </div>
+        <div class="text-xs text-slate-700 leading-normal pt-2 border-t border-emerald-100/60">
+          <strong class="text-emerald-900 block mb-0.5">Tips Penyimpanan Dapur:</strong> Simpan pada suhu chiller kulkas (4°C - 8°C) dalam wadah kering atau plastik berventilasi agar tetap renyah hingga 5-7 hari.
         </div>
       </div>
 
@@ -863,8 +857,8 @@ function openPackageModal(packageId) {
         ` : ""}
       </div>
 
-      <h4 class="text-sm font-bold text-slate-800 mb-3 flex items-center gap-1.5">
-        <span>🥗</span> Komposisi Bahan Segar dalam Paket (${includedItems.length} item):
+      <h4 class="text-sm font-bold text-slate-800 mb-3">
+        Komposisi Bahan Segar dalam Paket (${includedItems.length} item):
       </h4>
 
       <div class="space-y-3">
@@ -1031,7 +1025,7 @@ function updateCartUI() {
     const progress = Math.min((subtotal / CONFIG.freeShippingMin) * 100, 100);
     freeShipBar.style.width = `${progress}%`;
     if (subtotal >= CONFIG.freeShippingMin) {
-      freeShipText.innerHTML = `🎉 Selamat! Pesanan Anda berhak mendapat <b>Gratis Ongkir</b>!`;
+      freeShipText.innerHTML = `Selamat! Pesanan Anda berhak mendapat <b>Gratis Ongkir</b>!`;
     } else {
       const remaining = CONFIG.freeShippingMin - subtotal;
       freeShipText.innerHTML = `Tambah <b>${formatRupiah(remaining)}</b> lagi untuk Gratis Ongkir!`;
@@ -1086,7 +1080,9 @@ function updateCartUI() {
               class="text-slate-400 hover:text-rose-500 text-xs p-1"
               title="Hapus"
             >
-              ✕
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
             </button>
           </div>
 
@@ -1234,10 +1230,10 @@ function handleWhatsAppCheckout() {
   if (!order) return;
 
   // Debug Log: Catch link and message in Browser DevTools Console (F12)
-  console.group("🛒 [TAMAN SAYUR] Order Conversion Event Triggered");
-  console.log("🔗 WhatsApp URL Generated:\n", order.waUrl);
-  console.log("📝 Formatted Order Text:\n", order.message);
-  console.log("💰 Subtotal Belanja: Rp", order.subtotal);
+  console.group("[TAMAN SAYUR] Order Conversion Event Triggered");
+  console.log("WhatsApp URL Generated:\n", order.waUrl);
+  console.log("Formatted Order Text:\n", order.message);
+  console.log("Subtotal Belanja: Rp", order.subtotal);
   console.groupEnd();
 
   // Marketing Analytics Conversion Tracking (GA4 & Meta Pixel Hooks)
@@ -1269,9 +1265,9 @@ function handleCopyOrder() {
   if (!order) return;
 
   // Log to Console
-  console.group("📋 [TAMAN SAYUR] Order Message Copied to Clipboard");
-  console.log("🔗 WhatsApp URL:\n", order.waUrl);
-  console.log("📝 Plain Text:\n", order.message);
+  console.group("[TAMAN SAYUR] Order Message Copied to Clipboard");
+  console.log("WhatsApp URL:\n", order.waUrl);
+  console.log("Plain Text:\n", order.message);
   console.groupEnd();
 
   if (navigator.clipboard && navigator.clipboard.writeText) {
