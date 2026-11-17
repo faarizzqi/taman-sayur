@@ -812,11 +812,9 @@ function generateOrderData() {
     }
   });
 
-  message += `\n----------------------------------------\n`;
-  message += `Subtotal: ${formatRupiah(subtotal)}\n`;
+  message += `\nSubtotal: ${formatRupiah(subtotal)}\n`;
   message += `Ongkos Kirim: ${isFreeRadius ? "Bebas Ongkir (Radius Kebun Mitra)" : "Tarif Kurir Reguler (Konfirmasi Admin)"}\n`;
-  message += `TOTAL TAGIHAN: ${formatRupiah(subtotal)}\n`;
-  message += `----------------------------------------\n\n`;
+  message += `TOTAL TAGIHAN: ${formatRupiah(subtotal)}\n\n`;
   message += `Mohon konfirmasi ketersediaan stok dan penerusan pesanan ke kebun tujuan. Terima kasih.`;
 
   const waUrl = `https://wa.me/${CONFIG.whatsappNumber}?text=${encodeURIComponent(message)}`;
