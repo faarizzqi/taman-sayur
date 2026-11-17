@@ -10,7 +10,10 @@
 
 const CONFIG = {
   storeName: "Taman Sayur",
-  whatsappNumber: "6281234567890", // Ganti dengan nomor WhatsApp tujuan (format 62...)
+  // Nomor kontak dienkripsi menggunakan algoritma simetris 2-arah (XOR Cipher + Base64)
+  // Menjaga privasi kontak dari bot scraper dan crawler regex di repositori publik GitHub
+  contactCipher: "YlNVVF9mVEtHQXxYQQ==",
+  contactKey: "TamanSayurJateng2026",
   freeShippingMin: 100000,
   currencyFormatter: new Intl.NumberFormat("id-ID", {
     style: "currency",
@@ -18,6 +21,48 @@ const CONFIG = {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0
   })
+};
+
+// Dekripsi 2-Arah Nomor Kontak WhatsApp
+function getDecryptedPhone() {
+  try {
+    const raw = atob(CONFIG.contactCipher);
+    const key = CONFIG.contactKey;
+    let result = "";
+    for (let i = 0; i < raw.length; i++) {
+      result += String.fromCharCode(raw.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+    }
+    return result;
+  } catch (err) {
+    console.error("Gagal mendekripsi nomor kontak:", err);
+    return "";
+  }
+}
+
+// Inisialisasi Tautan WhatsApp Kontak CS (Header & Footer)
+function initContactLinks() {
+  const phone = getDecryptedPhone();
+  if (!phone) return;
+
+  const headerLink = document.getElementById("header-wa-link");
+  if (headerLink) {
+    headerLink.href = `https://wa.me/${phone}?text=${encodeURIComponent("Halo Taman Sayur, saya ingin tanya seputar produk dan pengiriman.")}`;
+  }
+
+  const footerLink = document.getElementById("footer-wa-link");
+  if (footerLink) {
+    footerLink.href = `https://wa.me/${phone}?text=${encodeURIComponent("Halo Taman Sayur, saya butuh bantuan.")}`;
+  }
+}
+
+// Utilitas publik untuk enkripsi nomor baru jika diperlukan di masa depan (akses via konsol browser F12)
+window.encryptContactPhone = function(plainPhone, key = CONFIG.contactKey) {
+  const raw = String(plainPhone).trim();
+  let xored = "";
+  for (let i = 0; i < raw.length; i++) {
+    xored += String.fromCharCode(raw.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+  }
+  return btoa(xored);
 };
 
 // Application State
@@ -66,6 +111,7 @@ function calculateDiscount(original, current) {
 
 // Initialize Application
 function initApp() {
+  initContactLinks();
   loadCartFromStorage();
   setupEventListeners();
   renderProducts();
@@ -817,7 +863,8 @@ function generateOrderData() {
   message += `TOTAL TAGIHAN: ${formatRupiah(subtotal)}\n\n`;
   message += `Mohon konfirmasi ketersediaan stok dan penerusan pesanan ke kebun tujuan. Terima kasih.`;
 
-  const waUrl = `https://wa.me/${CONFIG.whatsappNumber}?text=${encodeURIComponent(message)}`;
+  const phone = getDecryptedPhone();
+  const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
 
   return { customerName, customerAddress, subtotal, message, waUrl };
 }
