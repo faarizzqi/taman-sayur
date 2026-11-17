@@ -70,7 +70,9 @@ let state = {
   cart: [],
   activeCategory: "all",
   searchQuery: "",
-  sortBy: "featured"
+  sortBy: "featured",
+  currentPage: 1,
+  itemsPerPage: 10
 };
 
 // DOM Elements
@@ -79,6 +81,7 @@ const productCountEl = document.getElementById("product-count");
 const categoryButtons = document.querySelectorAll(".category-btn");
 const searchInput = document.getElementById("search-input");
 const sortSelect = document.getElementById("sort-select");
+const paginationContainer = document.getElementById("pagination-container");
 
 // Cart DOM
 const cartDrawer = document.getElementById("cart-drawer");
@@ -95,6 +98,8 @@ const copyWaBtn = document.getElementById("copy-wa-btn");
 // Modal DOM
 const packageModal = document.getElementById("package-modal");
 const packageModalContent = document.getElementById("package-modal-content");
+const productModal = document.getElementById("product-modal");
+const productModalContent = document.getElementById("product-modal-content");
 const videoModal = document.getElementById("video-modal");
 const videoPlayerContainer = document.getElementById("video-player-container");
 
@@ -126,6 +131,7 @@ function setupEventListeners() {
       categoryButtons.forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
       state.activeCategory = btn.dataset.category;
+      state.currentPage = 1; // Reset to page 1
       renderProducts();
     });
   });
@@ -134,6 +140,7 @@ function setupEventListeners() {
   if (searchInput) {
     searchInput.addEventListener("input", (e) => {
       state.searchQuery = e.target.value.trim().toLowerCase();
+      state.currentPage = 1; // Reset to page 1
       renderProducts();
     });
   }
@@ -142,6 +149,7 @@ function setupEventListeners() {
   if (sortSelect) {
     sortSelect.addEventListener("change", (e) => {
       state.sortBy = e.target.value;
+      state.currentPage = 1; // Reset to page 1
       renderProducts();
     });
   }
@@ -151,6 +159,31 @@ function setupEventListeners() {
   if (floatingCartBtn) floatingCartBtn.addEventListener("click", openCart);
   if (closeCartBtn) closeCartBtn.addEventListener("click", closeCart);
   if (cartOverlay) cartOverlay.addEventListener("click", closeCart);
+
+  // Modal Backdrop Click & Escape Key
+  if (packageModal) {
+    packageModal.addEventListener("click", (e) => {
+      if (e.target === packageModal) closePackageModal();
+    });
+  }
+  if (productModal) {
+    productModal.addEventListener("click", (e) => {
+      if (e.target === productModal) closeProductModal();
+    });
+  }
+  if (videoModal) {
+    videoModal.addEventListener("click", (e) => {
+      if (e.target === videoModal) closeVideoModal();
+    });
+  }
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      closePackageModal();
+      closeProductModal();
+      closeVideoModal();
+      closeCart();
+    }
+  });
 
   // Checkout & Copy WhatsApp Actions
   if (checkoutWaBtn) {
@@ -210,15 +243,37 @@ function getFilteredProducts() {
   return list;
 }
 
-// Render Products Grid
+// Render Products Grid with Pagination & Interactive Popups
 function renderProducts() {
   const items = getFilteredProducts();
+  const totalItems = items.length;
+  const totalPages = Math.ceil(totalItems / state.itemsPerPage) || 1;
 
-  if (productCountEl) {
-    productCountEl.textContent = `Menampilkan ${items.length} pilihan segar`;
+  // Boundary check
+  if (state.currentPage > totalPages) {
+    state.currentPage = totalPages;
+  }
+  if (state.currentPage < 1) {
+    state.currentPage = 1;
   }
 
-  if (items.length === 0) {
+  const startIndex = (state.currentPage - 1) * state.itemsPerPage;
+  const endIndex = Math.min(startIndex + state.itemsPerPage, totalItems);
+  const paginatedItems = items.slice(startIndex, endIndex);
+
+  // Update product count label
+  if (productCountEl) {
+    if (totalItems === 0) {
+      productCountEl.textContent = "0 pilihan komoditas ditemukan";
+    } else if (totalPages === 1) {
+      productCountEl.textContent = `Menampilkan seluruh ${totalItems} pilihan komoditas segar`;
+    } else {
+      productCountEl.textContent = `Menampilkan ${startIndex + 1} - ${endIndex} dari ${totalItems} pilihan komoditas segar`;
+    }
+  }
+
+  // Empty state handling
+  if (totalItems === 0) {
     productGrid.innerHTML = `
       <div class="col-span-full py-16 text-center">
         <div class="w-20 h-20 mx-auto mb-4 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-600">
@@ -227,16 +282,21 @@ function renderProducts() {
           </svg>
         </div>
         <h3 class="text-lg font-bold text-slate-800 mb-1">Produk tidak ditemukan</h3>
-        <p class="text-sm text-slate-500 max-w-sm mx-auto mb-4">Coba cari dengan kata kunci lain seperti "selada", "sop", "apel", atau "bawang".</p>
+        <p class="text-sm text-slate-500 max-w-sm mx-auto mb-4">Coba cari dengan kata kunci lain seperti "bayam", "sop", "bawang", atau "cabai".</p>
         <button onclick="resetFilter()" class="px-4 py-2 bg-emerald-700 text-white rounded-lg text-sm font-medium hover:bg-emerald-800 transition">
           Lihat Semua Produk
         </button>
       </div>
     `;
+    if (paginationContainer) {
+      paginationContainer.innerHTML = "";
+      paginationContainer.classList.add("hidden");
+    }
     return;
   }
 
-  productGrid.innerHTML = items.map(product => {
+  // Render paginated cards
+  productGrid.innerHTML = paginatedItems.map(product => {
     const isPackage = product.category === "paket";
     const discount = calculateDiscount(product.originalPrice, product.price);
     const hasDiscount = discount > 0;
@@ -260,8 +320,12 @@ function renderProducts() {
             ` : ""}
           </div>
 
-          <!-- Product Image -->
-          <div class="relative aspect-[4/3] overflow-hidden bg-slate-100">
+          <!-- Product Image (Click to open modal) -->
+          <div 
+            onclick="openPackageModal('${product.id}')"
+            class="relative aspect-[4/3] overflow-hidden bg-slate-100 cursor-pointer"
+            title="Klik untuk melihat rincian bahan paket"
+          >
             <img 
               src="${product.image}" 
               alt="${product.name}" 
@@ -292,8 +356,12 @@ function renderProducts() {
                 </span>
               </div>
 
-              <!-- Product Name -->
-              <h3 class="font-bold text-slate-900 text-base mb-1 line-clamp-1 group-hover:text-emerald-700 transition">
+              <!-- Product Name (Click to open modal) -->
+              <h3 
+                onclick="openPackageModal('${product.id}')"
+                class="font-bold text-slate-900 text-base mb-1 line-clamp-1 group-hover:text-emerald-700 transition cursor-pointer"
+                title="Klik untuk melihat rincian bahan paket"
+              >
                 ${product.name}
               </h3>
               
@@ -309,6 +377,7 @@ function renderProducts() {
                     📦 Isi Paket (${product.includedItemIds.length} Bahan):
                   </span>
                   <button 
+                    type="button"
                     onclick="openPackageModal('${product.id}')" 
                     class="text-[11px] font-bold text-emerald-700 hover:text-emerald-900 underline flex items-center gap-0.5"
                   >
@@ -385,8 +454,12 @@ function renderProducts() {
           ` : ""}
         </div>
 
-        <!-- Product Image -->
-        <div class="relative aspect-[4/3] overflow-hidden bg-slate-100">
+        <!-- Product Image (Click to open modal) -->
+        <div 
+          onclick="openProductModal('${product.id}')"
+          class="relative aspect-[4/3] overflow-hidden bg-slate-100 cursor-pointer"
+          title="Klik untuk melihat detail produk & tips penyimpanan"
+        >
           <img 
             src="${product.image}" 
             alt="${product.name}" 
@@ -417,15 +490,28 @@ function renderProducts() {
               </span>
             </div>
 
-            <!-- Name -->
-            <h3 class="font-bold text-slate-900 text-base mb-1 line-clamp-1 group-hover:text-emerald-700 transition">
+            <!-- Name (Click to open modal) -->
+            <h3 
+              onclick="openProductModal('${product.id}')"
+              class="font-bold text-slate-900 text-base mb-1 line-clamp-1 group-hover:text-emerald-700 transition cursor-pointer"
+              title="Klik untuk melihat detail produk"
+            >
               ${product.name}
             </h3>
 
             <!-- Description -->
-            <p class="text-xs text-slate-500 line-clamp-2 mb-3 leading-relaxed">
+            <p class="text-xs text-slate-500 line-clamp-2 mb-2 leading-relaxed">
               ${product.description}
             </p>
+
+            <!-- Quick Detail Link -->
+            <button 
+              type="button"
+              onclick="openProductModal('${product.id}')" 
+              class="text-[11px] font-bold text-emerald-700 hover:text-emerald-900 underline flex items-center gap-0.5 mb-2"
+            >
+              Lihat Detail &rarr;
+            </button>
           </div>
 
           <!-- Price & Button -->
@@ -456,17 +542,282 @@ function renderProducts() {
       </div>
     `;
   }).join("");
+
+  // Render pagination controls
+  renderPagination(totalItems, totalPages);
+}
+
+// Render Dynamic Pagination Controls
+function renderPagination(totalItems, totalPages) {
+  if (!paginationContainer) return;
+
+  if (totalPages <= 1) {
+    paginationContainer.classList.add("hidden");
+    paginationContainer.innerHTML = "";
+    return;
+  }
+
+  paginationContainer.classList.remove("hidden");
+
+  const start = (state.currentPage - 1) * state.itemsPerPage + 1;
+  const end = Math.min(start + state.itemsPerPage - 1, totalItems);
+
+  let pagesHtml = "";
+  for (let i = 1; i <= totalPages; i++) {
+    const isActive = i === state.currentPage;
+    pagesHtml += `
+      <button 
+        type="button"
+        onclick="goToPage(${i})" 
+        class="w-9 h-9 rounded-xl text-xs font-bold transition flex items-center justify-center ${
+          isActive 
+            ? "bg-emerald-700 text-white shadow-sm shadow-emerald-700/30" 
+            : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200"
+        }"
+      >
+        ${i}
+      </button>
+    `;
+  }
+
+  const prevDisabled = state.currentPage === 1;
+  const nextDisabled = state.currentPage === totalPages;
+
+  paginationContainer.innerHTML = `
+    <!-- Left Info Text -->
+    <div class="text-xs text-slate-500 font-medium text-center sm:text-left">
+      Menampilkan <span class="font-bold text-slate-800">${start}</span> - <span class="font-bold text-slate-800">${end}</span> dari <span class="font-bold text-slate-800">${totalItems}</span> pilihan komoditas
+    </div>
+
+    <!-- Right Controls -->
+    <div class="flex items-center gap-2 justify-center">
+      <button 
+        type="button"
+        onclick="goToPage(${state.currentPage - 1})"
+        ${prevDisabled ? "disabled" : ""}
+        class="px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1 border border-slate-200 ${
+          prevDisabled 
+            ? "opacity-40 cursor-not-allowed bg-slate-50 text-slate-400" 
+            : "bg-white text-slate-700 hover:bg-slate-100 active:scale-95"
+        }"
+      >
+        &larr; <span class="hidden sm:inline">Sebelumnya</span>
+      </button>
+
+      <div class="flex items-center gap-1.5">
+        ${pagesHtml}
+      </div>
+
+      <button 
+        type="button"
+        onclick="goToPage(${state.currentPage + 1})"
+        ${nextDisabled ? "disabled" : ""}
+        class="px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1 border border-slate-200 ${
+          nextDisabled 
+            ? "opacity-40 cursor-not-allowed bg-slate-50 text-slate-400" 
+            : "bg-white text-slate-700 hover:bg-slate-100 active:scale-95"
+        }"
+      >
+        <span class="hidden sm:inline">Selanjutnya</span> &rarr;
+      </button>
+    </div>
+  `;
+}
+
+// Navigate to Specific Page with Smooth Scroll
+function goToPage(page) {
+  const items = getFilteredProducts();
+  const totalPages = Math.ceil(items.length / state.itemsPerPage) || 1;
+  if (page < 1 || page > totalPages) return;
+  state.currentPage = page;
+  renderProducts();
+  document.getElementById("catalog-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 // Reset filter back to all
 function resetFilter() {
   state.activeCategory = "all";
   state.searchQuery = "";
+  state.currentPage = 1;
   if (searchInput) searchInput.value = "";
   categoryButtons.forEach(b => {
     b.classList.toggle("active", b.dataset.category === "all");
   });
   renderProducts();
+}
+
+// Open Single Product Detail Modal
+function openProductModal(productId) {
+  const prod = PRODUCT_MAP.get(productId);
+  if (!prod) return;
+
+  const discount = calculateDiscount(prod.originalPrice, prod.price);
+  const hasDiscount = discount > 0;
+
+  productModalContent.innerHTML = `
+    <!-- Top Image with Badges & Close -->
+    <div class="relative aspect-video sm:aspect-[16/9] w-full overflow-hidden bg-slate-100">
+      <img 
+        src="${prod.image}" 
+        alt="${prod.name}" 
+        class="w-full h-full object-cover"
+      />
+      <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent"></div>
+
+      <!-- Close Button -->
+      <button 
+        type="button"
+        onclick="closeProductModal()"
+        class="absolute top-4 right-4 z-10 text-white bg-black/40 hover:bg-black/70 backdrop-blur-sm rounded-full p-1.5 transition"
+        title="Tutup"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+
+      <!-- Overlay Badges -->
+      <div class="absolute bottom-4 left-4 right-4 text-white">
+        <div class="flex items-center gap-2 mb-1.5 flex-wrap">
+          <span class="bg-emerald-600 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+            ${prod.subCategory || "Sayuran Segar"}
+          </span>
+          ${prod.farmHub ? `
+            <span class="bg-white/90 backdrop-blur-sm text-emerald-900 text-[10px] font-bold px-2 py-0.5 rounded-full">
+              Hub: ${prod.farmHub}
+            </span>
+          ` : ""}
+          <span class="bg-amber-400 text-slate-900 text-[10px] font-extrabold px-2 py-0.5 rounded-full">
+            ★ ${prod.rating.toFixed(1)} (${prod.soldCount}+ terjual)
+          </span>
+        </div>
+        <h2 class="text-xl sm:text-2xl font-black text-white drop-shadow-sm">${prod.name}</h2>
+      </div>
+    </div>
+
+    <!-- Modal Body -->
+    <div class="p-6 max-h-[60vh] overflow-y-auto">
+      
+      <!-- Price & Origin Row -->
+      <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
+        <div>
+          <span class="text-xs text-slate-400 font-medium">Harga Petani:</span>
+          <div class="flex items-baseline gap-2">
+            <span class="text-2xl font-extrabold text-emerald-800">${formatRupiah(prod.price)}</span>
+            <span class="text-xs text-slate-500 font-medium">/ ${prod.unit}</span>
+          </div>
+          ${hasDiscount ? `
+            <span class="text-xs text-slate-400 line-through">${formatRupiah(prod.originalPrice)}</span>
+            <span class="text-xs font-bold text-rose-600 ml-1">Hemat ${discount}%</span>
+          ` : ""}
+        </div>
+        <div class="text-right">
+          <span class="text-xs text-slate-400 font-medium block">Lokasi Panen:</span>
+          <span class="text-xs font-bold text-slate-800">📍 ${prod.origin}</span>
+          <span class="block text-[10px] text-emerald-700 font-semibold mt-0.5">${prod.harvestStatus || "Dipetik Sesuai Pesanan"}</span>
+        </div>
+      </div>
+
+      <!-- Description -->
+      <div class="mb-5">
+        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Deskripsi Komoditas</h4>
+        <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">${prod.description}</p>
+      </div>
+
+      <!-- Freshness & Storage Guarantee -->
+      <div class="bg-emerald-50/70 border border-emerald-100 rounded-xl p-3.5 space-y-2 mb-4">
+        <div class="flex items-start gap-2">
+          <span class="text-emerald-700 text-sm">🌱</span>
+          <div class="text-xs text-slate-700 leading-normal">
+            <strong class="text-emerald-900">Zero-Inventory Fresh Harvest:</strong> Dipetik langsung dari kebun mitra petani setelah pesanan Anda masuk, bukan sayur simpanan gudang pendingin.
+          </div>
+        </div>
+        <div class="flex items-start gap-2 pt-2 border-t border-emerald-100/60">
+          <span class="text-emerald-700 text-sm">🧊</span>
+          <div class="text-xs text-slate-700 leading-normal">
+            <strong class="text-emerald-900">Tips Penyimpanan Dapur:</strong> Simpan pada suhu chiller kulkas (4°C - 8°C) dalam wadah kering atau plastik berventilasi agar tetap renyah hingga 5-7 hari.
+          </div>
+        </div>
+      </div>
+
+      <!-- Quantity Selector & Add Button -->
+      <div class="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <span class="text-xs font-bold text-slate-700">Jumlah Beli:</span>
+          <div class="flex items-center border border-slate-200 rounded-xl overflow-hidden bg-slate-50">
+            <button 
+              type="button"
+              onclick="adjustModalQty(-1)"
+              class="w-8 h-8 flex items-center justify-center text-slate-700 hover:bg-slate-200 transition font-bold"
+            >
+              -
+            </button>
+            <input 
+              id="modal-product-qty"
+              type="number" 
+              value="1" 
+              min="1" 
+              max="99"
+              readonly
+              class="w-10 text-center text-xs font-bold bg-transparent text-slate-800 focus:outline-none"
+            />
+            <button 
+              type="button"
+              onclick="adjustModalQty(1)"
+              class="w-8 h-8 flex items-center justify-center text-slate-700 hover:bg-slate-200 transition font-bold"
+            >
+              +
+            </button>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 w-full sm:w-auto">
+          <button 
+            type="button"
+            onclick="closeProductModal()"
+            class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 text-xs font-bold hover:bg-slate-100 transition"
+          >
+            Tutup
+          </button>
+          <button 
+            type="button"
+            onclick="addModalProductToCart('${prod.id}')"
+            class="flex-1 sm:flex-none px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 active:scale-95 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm shadow-emerald-700/20"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+            </svg>
+            + Masukkan Keranjang
+          </button>
+        </div>
+      </div>
+
+    </div>
+  `;
+
+  productModal.classList.remove("hidden");
+  productModal.classList.add("flex");
+}
+
+function closeProductModal() {
+  if (!productModal) return;
+  productModal.classList.add("hidden");
+  productModal.classList.remove("flex");
+}
+
+function adjustModalQty(delta) {
+  const input = document.getElementById("modal-product-qty");
+  if (!input) return;
+  let val = parseInt(input.value) || 1;
+  val = Math.max(1, Math.min(99, val + delta));
+  input.value = val;
+}
+
+function addModalProductToCart(productId) {
+  const input = document.getElementById("modal-product-qty");
+  const qty = input ? parseInt(input.value) || 1 : 1;
+  addToCart(productId, qty);
+  closeProductModal();
 }
 
 // Open Package Detail Modal
@@ -861,7 +1212,10 @@ function generateOrderData() {
   message += `\nSubtotal: ${formatRupiah(subtotal)}\n`;
   message += `Ongkos Kirim: ${isFreeRadius ? "Bebas Ongkir (Radius Kebun Mitra)" : "Tarif Kurir Reguler (Konfirmasi Admin)"}\n`;
   message += `TOTAL TAGIHAN: ${formatRupiah(subtotal)}\n\n`;
-  message += `Mohon konfirmasi ketersediaan stok dan penerusan pesanan ke kebun tujuan. Terima kasih.`;
+  message += `Mohon konfirmasi ketersediaan stok dan penerusan pesanan ke kebun tujuan. Terima kasih.\n\n`;
+  message += `Setelah pesanan sampai, kirim ulasan Anda dengan format:\n`;
+  message += `/rating *jumlah_bintang_maks_5* *pesan*\n`;
+  message += `Contoh: /rating 5 Sayur kangkung dan bumbu brebes segar sekali, sampai masih dingin!`;
 
   const phone = getDecryptedPhone();
   const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
