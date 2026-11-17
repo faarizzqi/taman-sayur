@@ -45,6 +45,7 @@ const floatingCartBtn = document.getElementById("floating-cart-btn");
 const openCartBtns = document.querySelectorAll(".open-cart-btn");
 const closeCartBtn = document.getElementById("close-cart-btn");
 const checkoutWaBtn = document.getElementById("checkout-wa-btn");
+const copyWaBtn = document.getElementById("copy-wa-btn");
 
 // Modal DOM
 const packageModal = document.getElementById("package-modal");
@@ -105,9 +106,12 @@ function setupEventListeners() {
   if (closeCartBtn) closeCartBtn.addEventListener("click", closeCart);
   if (cartOverlay) cartOverlay.addEventListener("click", closeCart);
 
-  // Checkout via WhatsApp
+  // Checkout & Copy WhatsApp Actions
   if (checkoutWaBtn) {
     checkoutWaBtn.addEventListener("click", handleWhatsAppCheckout);
+  }
+  if (copyWaBtn) {
+    copyWaBtn.addEventListener("click", handleCopyOrder);
   }
 }
 
@@ -740,14 +744,8 @@ function closeCart() {
   }
 }
 
-// WhatsApp Checkout Generator
-function handleWhatsAppCheckout() {
-  if (state.cart.length === 0) {
-    alert("Keranjang belanja Anda masih kosong!");
-    return;
-  }
-
-  // Get customer form values
+// Build Order Data & Formatted Message
+function generateOrderData() {
   const nameInput = document.getElementById("customer-name");
   const addressInput = document.getElementById("customer-address");
   const zoneInput = document.getElementById("delivery-zone");
@@ -763,13 +761,13 @@ function handleWhatsAppCheckout() {
   if (!customerName) {
     alert("Silakan masukkan Nama Anda terlebih dahulu.");
     if (nameInput) nameInput.focus();
-    return;
+    return null;
   }
 
   if (!customerAddress) {
     alert("Silakan masukkan Alamat Pengiriman Anda.");
     if (addressInput) addressInput.focus();
-    return;
+    return null;
   }
 
   const subtotal = getCartTotal();
@@ -824,7 +822,72 @@ function handleWhatsAppCheckout() {
   message += `\nMohon konfirmasi ketersediaan dan penerusan pesanan ke kebun tujuan. Terima kasih!`;
 
   const waUrl = `https://wa.me/${CONFIG.whatsappNumber}?text=${encodeURIComponent(message)}`;
-  window.open(waUrl, "_blank");
+
+  return { customerName, customerAddress, subtotal, message, waUrl };
+}
+
+// WhatsApp Checkout Generator
+function handleWhatsAppCheckout() {
+  if (state.cart.length === 0) {
+    alert("Keranjang belanja Anda masih kosong!");
+    return;
+  }
+
+  const order = generateOrderData();
+  if (!order) return;
+
+  // Debug Log: Catch link and message in Browser DevTools Console (F12)
+  console.group("🛒 [TAMAN SAYUR] Order Conversion Event Triggered");
+  console.log("🔗 WhatsApp URL Generated:\n", order.waUrl);
+  console.log("📝 Formatted Order Text:\n", order.message);
+  console.log("💰 Subtotal Belanja: Rp", order.subtotal);
+  console.groupEnd();
+
+  // Marketing Analytics Conversion Tracking (GA4 & Meta Pixel Hooks)
+  if (typeof gtag === "function") {
+    gtag("event", "generate_lead", {
+      currency: "IDR",
+      value: order.subtotal,
+      items_count: state.cart.length
+    });
+  }
+  if (typeof fbq === "function") {
+    fbq("track", "Contact", {
+      value: order.subtotal,
+      currency: "IDR"
+    });
+  }
+
+  window.open(order.waUrl, "_blank");
+}
+
+// Copy Order Text & Catch Link
+function handleCopyOrder() {
+  if (state.cart.length === 0) {
+    alert("Keranjang belanja Anda masih kosong!");
+    return;
+  }
+
+  const order = generateOrderData();
+  if (!order) return;
+
+  // Log to Console
+  console.group("📋 [TAMAN SAYUR] Order Message Copied to Clipboard");
+  console.log("🔗 WhatsApp URL:\n", order.waUrl);
+  console.log("📝 Plain Text:\n", order.message);
+  console.groupEnd();
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(order.message)
+      .then(() => {
+        showToast("Format pesanan & link berhasil disalin!");
+      })
+      .catch(() => {
+        showToast("Format pesanan siap digunakan!");
+      });
+  } else {
+    showToast("Format pesanan siap di konsol browser (F12)!");
+  }
 }
 
 // Toast notification helper
