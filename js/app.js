@@ -780,46 +780,44 @@ function generateOrderData() {
 
   const isFreeRadius = deliveryZone.includes("Bebas Ongkir");
 
-  // Build Structured WhatsApp Message
-  let message = `*PESANAN BARU - ${CONFIG.storeName.toUpperCase()}*\n`;
-  message += `📅 Tanggal: ${dateStr}\n\n`;
+  // Build Clean Structured WhatsApp Message (Tanpa ikon/emoji, rapi & formal)
+  let message = `PESANAN BARU - ${CONFIG.storeName.toUpperCase()}\n`;
+  message += `Tanggal: ${dateStr}\n\n`;
   
-  message += `*Data Pengiriman:*\n`;
-  message += `• Nama: ${customerName}\n`;
-  message += `• Alamat: ${customerAddress}\n`;
-  message += `• Zona Pengiriman: ${deliveryZone}\n`;
-  message += `• Waktu Kirim: ${deliverySlot}\n`;
+  message += `DATA PENGIRIMAN\n`;
+  message += `Nama: ${customerName}\n`;
+  message += `Alamat: ${customerAddress}\n`;
+  message += `Zona: ${deliveryZone}\n`;
+  message += `Waktu Kirim: ${deliverySlot}\n`;
   if (notes) {
-    message += `• Catatan: ${notes}\n`;
+    message += `Catatan: ${notes}\n`;
   }
-  message += `\n*Daftar Belanja (Forward ke Kebun Tujuan):*\n`;
+  message += `\nRINCIAN PESANAN\n`;
 
   state.cart.forEach((item, index) => {
     const product = PRODUCT_MAP.get(item.id);
     if (product) {
       const lineTotal = product.price * item.quantity;
       const isPkg = product.category === "paket";
-      const hubText = product.farmHub ? ` [Hub: ${product.farmHub}]` : "";
-      message += `${index + 1}. *${product.name}* (${item.quantity}x)${hubText}\n`;
-      message += `   Harga: ${formatRupiah(product.price)} / ${product.unit} = ${formatRupiah(lineTotal)}\n`;
+      const hubText = product.farmHub ? ` [${product.farmHub}]` : "";
+      message += `${index + 1}. ${product.name} (${item.quantity}x)${hubText}\n`;
+      message += `   ${formatRupiah(product.price)} / ${product.unit} = ${formatRupiah(lineTotal)}\n`;
       if (isPkg && product.includedItemIds) {
         const itemNames = product.includedItemIds.map(id => {
           const p = PRODUCT_MAP.get(id);
           return p ? p.name.split(" ")[0] : "";
-        }).filter(Boolean).slice(0, 4).join(", ");
-        message += `   _Isi: ${itemNames}..._\n`;
+        }).filter(Boolean).join(", ");
+        message += `   Komposisi: ${itemNames}\n`;
       }
     }
   });
 
-  message += `--------------------------------------\n`;
-  message += `*TOTAL TAGIHAN: ${formatRupiah(subtotal)}*\n`;
-  if (isFreeRadius) {
-    message += `🛵 _Ongkos Kirim: Bebas Ongkir (Radius Kebun Mitra)_\n`;
-  } else {
-    message += `🛵 _Ongkos Kirim: Tarif Kurir Regular (Konfirmasi Admin)_\n`;
-  }
-  message += `\nMohon konfirmasi ketersediaan dan penerusan pesanan ke kebun tujuan. Terima kasih!`;
+  message += `\n----------------------------------------\n`;
+  message += `Subtotal: ${formatRupiah(subtotal)}\n`;
+  message += `Ongkos Kirim: ${isFreeRadius ? "Bebas Ongkir (Radius Kebun Mitra)" : "Tarif Kurir Reguler (Konfirmasi Admin)"}\n`;
+  message += `TOTAL TAGIHAN: ${formatRupiah(subtotal)}\n`;
+  message += `----------------------------------------\n\n`;
+  message += `Mohon konfirmasi ketersediaan stok dan penerusan pesanan ke kebun tujuan. Terima kasih.`;
 
   const waUrl = `https://wa.me/${CONFIG.whatsappNumber}?text=${encodeURIComponent(message)}`;
 
