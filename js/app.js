@@ -1206,8 +1206,8 @@ function generateOrderData() {
   message += `TOTAL TAGIHAN: ${formatRupiah(subtotal)}\n\n`;
   message += `Mohon konfirmasi ketersediaan stok dan penerusan pesanan ke kebun tujuan. Terima kasih.\n\n`;
   message += `Setelah pesanan sampai, kirim ulasan Anda dengan format:\n`;
-  message += `/rating *jumlah_bintang_maks_5* *pesan*\n`;
-  message += `Contoh: /rating 5 Sayur kangkung dan bumbu brebes segar sekali, sampai masih dingin!`;
+  message += `/ulas *jumlah_bintang_maks_5* *pesan*\n`;
+  message += `Contoh: /ulas 5 Sayur kangkung dan bumbu brebes segar sekali, sampai masih dingin!`;
 
   const phone = getDecryptedPhone();
   const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
