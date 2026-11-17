@@ -1,4 +1,4 @@
-# TaniSegar: Katalog produk pertanian B2C dan order otomatis WhatsApp
+# Taman Sayur: Katalog produk pertanian B2C dan order otomatis WhatsApp
 
 Studi kasus pembuatan katalog web untuk startup pertanian B2C (*farm-to-table*). Proyek ini menggabungkan struktur data Sistem Informasi, materi visual promosi, dan alur konversi penjualan langsung ke WhatsApp tanpa backend server.
 
@@ -92,7 +92,7 @@ Langkah untuk mempublikasikan katalog ini secara online tanpa biaya:
    ```bash
    git init
    git add .
-   git commit -m "feat: rilis awal katalog web TaniSegar"
+   git commit -m "feat: rilis awal katalog web Taman Sayur"
    ```
 2. Hubungkan ke repositori GitHub Anda dan kirim ke cabang `main`.
 3. Buka menu `Settings` lalu pilih menu `Pages` pada repositori GitHub.

@@ -1,5 +1,5 @@
 /**
- * TaniSegar - Core Application Logic
+ * Taman Sayur - Core Application Logic
  * Features:
  * - Product filtering & live search
  * - Relational package detail modal (shows individual items inside a bundle)
@@ -9,7 +9,7 @@
  */
 
 const CONFIG = {
-  storeName: "TaniSegar",
+  storeName: "Taman Sayur",
   whatsappNumber: "6281234567890", // Ganti dengan nomor WhatsApp tujuan (format 62...)
   freeShippingMin: 100000,
   currencyFormatter: new Intl.NumberFormat("id-ID", {
@@ -510,7 +510,7 @@ function openVideoModal() {
       <iframe 
         class="w-full h-full"
         src="https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?autoplay=1&mute=0" 
-        title="TaniSegar Farm Video Showcase" 
+        title="Taman Sayur Farm Video Showcase" 
         frameborder="0" 
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
         allowfullscreen>
@@ -531,7 +531,7 @@ function closeVideoModal() {
 // Shopping Cart Functions
 function loadCartFromStorage() {
   try {
-    const saved = localStorage.getItem("tanisegar_cart");
+    const saved = localStorage.getItem("tamansayur_cart") || localStorage.getItem("tanisegar_cart");
     state.cart = saved ? JSON.parse(saved) : [];
   } catch (e) {
     state.cart = [];
@@ -539,7 +539,7 @@ function loadCartFromStorage() {
 }
 
 function saveCartToStorage() {
-  localStorage.setItem("tanisegar_cart", JSON.stringify(state.cart));
+  localStorage.setItem("tamansayur_cart", JSON.stringify(state.cart));
 }
 
 function addToCart(productId, qty = 1) {
@@ -810,10 +810,10 @@ function handleWhatsAppCheckout() {
 
 // Toast notification helper
 function showToast(msg) {
-  let toast = document.getElementById("tanisegar-toast");
+  let toast = document.getElementById("tamansayur-toast");
   if (!toast) {
     toast = document.createElement("div");
-    toast.id = "tanisegar-toast";
+    toast.id = "tamansayur-toast";
     toast.className = "fixed bottom-5 left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-md text-white text-xs font-semibold px-4 py-2.5 rounded-full shadow-lg z-50 flex items-center gap-2 pointer-events-none transition-opacity duration-300 opacity-0";
     document.body.appendChild(toast);
   }

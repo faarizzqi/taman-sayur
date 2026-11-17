@@ -1,5 +1,5 @@
 /**
- * TaniSegar - Master Product Catalog Database
+ * Taman Sayur - Master Product Catalog Database
  * Total Items: 100 (80 Individual Products + 20 Bundling Packages)
  * 100% Relational Integrity: Every package references valid prod-XX IDs.
  */
