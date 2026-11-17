@@ -1193,14 +1193,10 @@ function generateOrderData() {
       const lineTotal = product.price * item.quantity;
       const isPkg = product.category === "paket";
       const hubText = product.farmHub ? ` [${product.farmHub}]` : "";
-      message += `${index + 1}. ${product.name} (${item.quantity}x)${hubText}\n`;
+      message += `${index + 1}. ${product.id} (${item.quantity}x)${hubText}\n`;
       message += `   ${formatRupiah(product.price)} / ${product.unit} = ${formatRupiah(lineTotal)}\n`;
       if (isPkg && product.includedItemIds) {
-        const itemNames = product.includedItemIds.map(id => {
-          const p = PRODUCT_MAP.get(id);
-          return p ? p.name.split(" ")[0] : "";
-        }).filter(Boolean).join(", ");
-        message += `   Komposisi: ${itemNames}\n`;
+        message += `   Komposisi: ${product.includedItemIds.join(", ")}\n`;
       }
     }
   });
